@@ -68,6 +68,22 @@ async function loadWorkers() {
   }
 }
 
+function createModel(
+  extension: SupportEditorType,
+  filename: string,
+  code?: string
+): monaco.editor.ITextModel {
+  return monaco.editor.createModel(
+    code || "",
+    SupportLanguage[extension],
+    monaco.Uri.file(`file://${filename}`)
+  )
+}
+
+function findModel(filename: string) {
+  return monaco.editor.getModel(monaco.Uri.file(`file://${filename}`))
+}
+
 export async function getRunnableJS(filename: string) {
   const uri = monaco.Uri.file(`file://${filename}`)
   // sometimes typescript worker is not loaded
@@ -103,6 +119,7 @@ export class MonacoEditor {
   }
 
   removeModel() {
+    this.monacoEditor.getModel()?.onDidChangeContent
     this.monacoEditor.getModel()?.dispose()
   }
 }
@@ -134,22 +151,6 @@ export const createMonacoManager = createSinglePromise(async (wrap: HTMLElement,
     wrap.appendChild(state.el)
   }
   active(length)
-
-  function createModel(
-    extension: SupportEditorType,
-    filename: string,
-    code?: string
-  ): monaco.editor.ITextModel {
-    return monaco.editor.createModel(
-      code || "",
-      SupportLanguage[extension],
-      monaco.Uri.file(`file://${filename}`)
-    )
-  }
-
-  function findModel(filename: string) {
-    return monaco.editor.getModel(monaco.Uri.file(`file://${filename}`))
-  }
 
   function createModelIfNotExist(
     extension: SupportEditorType,

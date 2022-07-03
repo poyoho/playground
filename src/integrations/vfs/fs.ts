@@ -1,8 +1,10 @@
 import { EventListen } from "./eventListener"
 import { BaseFile } from "./baseFile"
 import { VueSFCFile } from "./vue-sfc"
+import { TypescriptFile } from "./typescript"
 
-export type File = BaseFile | VueSFCFile
+export type File = BaseFile | VueSFCFile | TypescriptFile
+export type CompileFile = VueSFCFile | TypescriptFile
 
 type FileSystemEventMap<FileType> = {
   update: (file: FileType) => void;
@@ -22,11 +24,18 @@ export class FileSystem extends EventListen<FileSystemEventMap<File>> {
         const vueSFC = new VueSFCFile(name, files[file] as unknown as string)
         vueSFC.suffix = suffix
         this.writeFile(vueSFC)
+      } else if(suffix === 'ts') {
+        const typescript = new TypescriptFile(name)
+        typescript.suffix = suffix
+        typescript.content = typescript.compiled.js = files[file] as unknown as string
+        typescript.change = false
+        this.writeFile(typescript)
       } else {
         const baseFile = this.writeBaseFile(name, files[file] as unknown as string)
         baseFile.suffix = suffix
       }
     }
+    this.readFile('bootstrap.js')!.private = true
   }
 
   isExist(filename: string) {
@@ -61,6 +70,6 @@ export class FileSystem extends EventListen<FileSystemEventMap<File>> {
   }
 
   dirs() {
-    return Object.keys(this.files).map(file => this.files[file])
+    return Object.keys(this.files).map(file => this.files[file]).filter(item => !item.private)
   }
 }

@@ -7,6 +7,7 @@ specifiers:
   critters: ^0.0.16
   cross-env: ^7.0.3
   cypress: ^10.3.0
+  es-module-lexer: ^0.10.5
   eslint: ^8.18.0
   eslint-plugin-cypress: ^2.12.1
   monaco-editor: 0.24.0
@@ -44,6 +45,7 @@ devDependencies:
   critters: 0.0.16
   cross-env: 7.0.3
   cypress: 10.3.0
+  es-module-lexer: 0.10.5
   eslint: 8.19.0
   eslint-plugin-cypress: 2.12.1_eslint@8.19.0
   pnpm: 7.4.1
@@ -1044,6 +1046,10 @@ packages:
 
   /entities/2.2.0:
     resolution: {integrity: sha512-p92if5Nz619I0w+akJrLZH0MX0Pb5DX39XOwQTtXSdQQOaYH03S1uIQp4mhOZtAXrxq4ViO67YTiLBo2638o9A==}
+    dev: true
+
+  /es-module-lexer/0.10.5:
+    resolution: {integrity: sha512-+7IwY/kiGAacQfY+YBhKMvEmyAJnw5grTUgjG85Pe7vcUI/6b7pZjZG8nQ7+48YhzEAEqrEgD2dCz/JIK+AYvw==}
     dev: true
 
   /esbuild-android-64/0.14.48:

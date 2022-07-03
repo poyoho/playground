@@ -18,7 +18,7 @@ const emit = defineEmits([
 
 const props = defineProps({
   loadModules: {
-    type: Function as PropType<(data: SandboxHandleData) => string>,
+    type: Function as PropType<(data: SandboxHandleData) => Promise<string>>,
     required: true
   }
 })

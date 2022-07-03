@@ -2,7 +2,7 @@
 import { Sandbox, SandboxHandleData, SandboxExpose } from "@/components/iframe"
 import { MonacoEditor, MonacoEditorExpose } from "@/components/monaco"
 import { TabsWrap, TabItem, Tabs } from "@/components/tabs/tabs"
-import { fs, File, VueSFCFile } from "@/integrations/vfs"
+import { fs, File, VueSFCFile, CompileFile } from "@/integrations/vfs"
 
 const sandbox = ref<SandboxExpose>()
 const monaco = ref<MonacoEditorExpose>()
@@ -19,7 +19,7 @@ fs.subscribe('delete', () => {
 
 onMounted(async () => {
   const monacoManager = await monaco.value!.manager.promise
-  // const sandboxInstance = sandbox.value!
+  const sandboxInstance = sandbox.value!
   watch(active, async () => {
     const { filename, suffix, content } = active.value
     if (active.value.suffix === 'vue') {
@@ -38,15 +38,39 @@ onMounted(async () => {
       const model1 = monacoManager.createModelIfNotExist(suffix as any, filename, content)
       editor1.editor.setModel(model1)
     }
+    sandboxInstance.evalShim(bootstrap())
   }, { immediate: true })
 })
 
-function loadModules(data: SandboxHandleData): string {
-  return fs.readFile(data.id || '')?.toString() || ''
+async function loadModules(data: SandboxHandleData): Promise<string> {
+  if (data.id?.startsWith('./')) {
+    const filename = data.id.replace('./', '')
+    const file = fs.readFile(filename)
+    if (!file) {
+      throw 'no found file'
+    }
+
+    // absolute path (internal module)
+    if ((file as any).compileFile) {
+      const compileFile = file as CompileFile
+      if (file.change) {
+        await compileFile.compileFile()
+      }
+      return compileFile.compiled.js
+    }
+  }
+  // module path (extract module)
+  console.log('[loadModules]', data.id)
+  const res = await fetch('/vue.runtime.esm-browser.prod.js')
+  return await res.text()
 }
 
 function close(file: string) {
   fs.removeFile(file)
+}
+
+function bootstrap() {
+  return fs.readFile('bootstrap.js')!.content
 }
 </script>
 <template>

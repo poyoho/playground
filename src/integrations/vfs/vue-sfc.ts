@@ -29,16 +29,14 @@ export class VueSFCFile extends BaseFile {
     }
   }
 
-  async compileSFC() {
+  async compileFile() {
     const compiled = await compileVueSFCFile(this.filename, [
-      '<template>',
       this.template,
-      '</template>',
       '<script type="script" setup>',
       this.script,
-      '</script type="script" setup>',
+      '</script>',
     ].join('\n'))
     this.compiled = compiled
-    return compiled
+    console.log('[compileFile]', this.compiled);
   }
 }

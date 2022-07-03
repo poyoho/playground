@@ -1,1 +1,3 @@
-console.log("main.ts")
+export default function enhanceApp({ app }) {
+  // enhance app
+}

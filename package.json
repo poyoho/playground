@@ -27,6 +27,7 @@
     "critters": "^0.0.16",
     "cross-env": "^7.0.3",
     "cypress": "^10.3.0",
+    "es-module-lexer": "^0.10.5",
     "eslint": "^8.18.0",
     "eslint-plugin-cypress": "^2.12.1",
     "pnpm": "^7.4.0",

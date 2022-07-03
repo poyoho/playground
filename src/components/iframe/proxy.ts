@@ -12,7 +12,7 @@ interface PendingCMD {
 export type SandboxHandler =  Partial<{
   on_fetch_progress: (data: SandboxHandleData) => void
   on_error: (data: SandboxHandleData) => void
-  on_load: (data: SandboxHandleData) => string
+  on_load: (data: SandboxHandleData) => Promise<string>
   on_unhandled_rejection: (data: SandboxHandleData) => void
   on_console: (data: SandboxHandleData) => void
   on_console_group: (data: SandboxHandleData) => void
@@ -84,7 +84,7 @@ export class SandboxProxy {
     }
   }
 
-  handle_repl_message(event: any) {
+  async handle_repl_message(event: any) {
     if (event.source !== this.iframe.contentWindow) {
       return
     }
@@ -108,7 +108,7 @@ export class SandboxProxy {
       case 'console_group_end':
         return this.handlers.on_console_group_end && this.handlers.on_console_group_end(event.data)
       case 'load':
-        const data = this.handlers.on_load && this.handlers.on_load(event.data)
+        const data = this.handlers.on_load && await this.handlers.on_load(event.data)
         this.iframe.contentWindow!.postMessage({ action, args: { data }, command_id }, '*')
         return
     }
