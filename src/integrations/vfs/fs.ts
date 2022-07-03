@@ -9,6 +9,11 @@ type FileSystemEventMap<FileType> = {
 export class FileSystem<FileType extends BaseFile> extends EventListen<FileSystemEventMap<FileType>> {
   private files: Record<string, FileType> = {}
 
+  constructor() {
+    super()
+    console.log('[vfs]', import.meta.globEager("@/sample/vue/*", { as: "raw" }))
+  }
+
   isExist(filename: string) {
     return this.files[filename] !== undefined
   }
@@ -34,3 +39,13 @@ export class FileSystem<FileType extends BaseFile> extends EventListen<FileSyste
     this.files = {}
   }
 }
+
+// export function createOrGetFile(fs: FileSystem<CompiledFile>, filename: string, content: string) {
+//   let file: CompiledFile
+//   if (fs.isExist(filename)) {
+//     file = fs.writeFile(new CompiledFile(filename), content)
+//   } else {
+//     file = fs.readFile(filename)!
+//   }
+//   return file
+// }

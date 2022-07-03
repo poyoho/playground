@@ -1,6 +1,6 @@
-type monaco = typeof monaco
+import * as monaco from "monaco-editor"
 
-export function setupTypescriptLanguageService (monaco: monaco) {
+export function createMonacoTypescriptServiceManage (){
   const localConfig = {
     noUnusedLocals: false,
     noUnusedParameters: false,
@@ -39,8 +39,6 @@ export function setupTypescriptLanguageService (monaco: monaco) {
       names.forEach(name => {
         delete packages[name]
       })
-      console.log(packages)
-
       // monaco.languages.typescript.typescriptDefaults.setExtraLibs(packages)
       // monaco.languages.typescript.javascriptDefaults.setExtraLibs(packages)
     }

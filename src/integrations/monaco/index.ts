@@ -1,8 +1,19 @@
+import * as monaco from "monaco-editor"
+import { createMonacoThemeManager } from "./textmate"
+import { createMonacoTypescriptServiceManage } from "./language/typescript"
 import { createSinglePromise, tryPromise } from "@/utils/promise"
 
-export * from "./textmate"
-import { useMonacoEditorMain } from "./fillers/monaco"
-import { setupTypescriptLanguageService } from "./setup"
+export type SupportEditorType = "vuehtml" | "ts" | "js" | "css" | "json" | "html"
+
+export interface MonacoEditorItem {
+  el: HTMLElement
+  editor: MonacoEditor
+  status: boolean
+}
+
+type PromiseValue<T> = T extends Promise<infer N> ? N : never
+
+export type MonacoManager = PromiseValue<ReturnType<typeof createMonacoManager>>
 
 export const SupportLanguage = {
   "vuehtml": "vuehtml",
@@ -13,7 +24,7 @@ export const SupportLanguage = {
   "json": "json"
 }
 
-export const loadWorkers = createSinglePromise(async () => {
+async function loadWorkers() {
   const [
     _, // just import it
     { default: VueHTMLWorker },
@@ -55,21 +66,9 @@ export const loadWorkers = createSinglePromise(async () => {
       }
     },
   }
-})
+}
 
-export const setupMonaco = createSinglePromise(async () => {
-  const { monaco } = await useMonacoEditorMain()
-
-  await loadWorkers()
-
-  return {
-    monaco,
-    typescript: setupTypescriptLanguageService(monaco),
-  }
-})
-
-export async function getRunnableJS (filename: string) {
-  const { monaco } = await setupMonaco()
+export async function getRunnableJS(filename: string) {
   const uri = monaco.Uri.file(`file://${filename}`)
   // sometimes typescript worker is not loaded
   const worker = await tryPromise(() => monaco.languages.typescript.getTypeScriptWorker(), 3, 100)
@@ -79,4 +78,98 @@ export async function getRunnableJS (filename: string) {
   return (firstJS && firstJS.text) || ""
 }
 
-export default setupMonaco
+export class MonacoEditor {
+  monacoEditor: monaco.editor.ICodeEditor
+
+  constructor(el: HTMLElement) {
+    this.monacoEditor = monaco.editor.create(el, {
+      tabSize: 2,
+      insertSpaces: true,
+      autoClosingQuotes: 'always',
+      detectIndentation: false,
+      folding: false,
+      automaticLayout: true,
+      theme: 'vscode-dark',
+      minimap: {
+        enabled: false,
+      },
+      useShadowDOM: false,
+    })
+  }
+
+  createModel(
+    extension: keyof typeof SupportLanguage,
+    filename: string,
+    code?: string
+  ): monaco.editor.ITextModel {
+    return monaco.editor.createModel(
+      code || "",
+      SupportLanguage[extension],
+      monaco.Uri.file(`file://${filename}`)
+    )
+  }
+
+  findModel(filename: string) {
+    return monaco.editor.getModel(monaco.Uri.file(`file://${filename}`))
+  }
+
+  setModel(model: monaco.editor.ITextModel) {
+    console.log("[monaco-editor] setModel")
+    this.monacoEditor.setModel(model)
+  }
+
+  removeModel() {
+    this.monacoEditor.getModel()?.dispose()
+  }
+}
+
+export const createMonacoManager = createSinglePromise(async (wrap: HTMLElement, allTypes: SupportEditorType[]) => {
+  const editors: Record<string, MonacoEditorItem> = {}
+  const [_, theme] = await Promise.all([
+    loadWorkers(),
+    createMonacoThemeManager(),
+  ])
+  wrap.style.cssText = `
+    display: flex;
+    flex-direction: column
+  `
+  allTypes.forEach(type => {
+    const el = document.createElement('div')
+    const editor = new MonacoEditor(el)
+    const state = { el, editor, status: true }
+    editors[type] = state
+    state.status = true
+    theme.setupTheme(editor.monacoEditor, 'vscode-drak')
+  })
+
+  function get(type: SupportEditorType): MonacoEditorItem {
+    return editors[type]
+  }
+
+  function hide(types: SupportEditorType[]): MonacoEditorItem[] {
+    return types.map(type => {
+      const state = editors[type]
+      state.el.remove()
+      return state
+    })
+  }
+
+  function active(types: SupportEditorType[]) {
+    hide(allTypes)
+    const height = 100 / types.length
+    return types.map(type => {
+      const state = editors[type]
+      state.el.style.height = `${height}%`
+      wrap.appendChild(state.el)
+      return state
+    })
+  }
+
+  return {
+    monaco,
+    theme,
+    typescript: createMonacoTypescriptServiceManage(),
+    get,
+    active
+  }
+})

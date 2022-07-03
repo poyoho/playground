@@ -1,2 +1,5 @@
 export * from "./baseFile"
-export * from "./fs"
+export * from "./vue-sfc"
+import { FileSystem } from "./fs"
+
+export const fs = new FileSystem()

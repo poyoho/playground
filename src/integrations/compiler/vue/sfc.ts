@@ -9,9 +9,7 @@ import {
 } from "@vue/compiler-sfc"
 import { COMP_IDENTIFIER, SFCFile } from "./env"
 
-export async function compileVueSFCFile(
-  file: SFCFile
-): Promise<Error[]> {
+export async function compileVueSFCFile(file: SFCFile): Promise<Error[]> {
   if (!file.filename.endsWith('.vue')) {
     file.compiled.js = file.compiled.ssr = file.content
     return []

@@ -1,9 +1,9 @@
-export function createSinglePromise<T>(fn: () => Promise<T>): () => Promise<T> {
+export function createSinglePromise<T, N extends any[]>(fn: (...args: N) => Promise<T>): (...args: N) => Promise<T> {
   let _promise: Promise<T>
 
-  function wrapper() {
+  function wrapper(...args: N) {
     if (!_promise) {
-      _promise = fn()
+      _promise = fn(...args)
     }
     return _promise
   }

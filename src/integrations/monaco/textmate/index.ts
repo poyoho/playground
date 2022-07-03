@@ -1,3 +1,4 @@
+import * as monaco from "monaco-editor"
 import { createSinglePromise } from "@/utils/promise"
 import { wireTmGrammars } from 'monaco-editor-textmate'
 import { Registry } from 'monaco-textmate'
@@ -50,7 +51,7 @@ function convertTheme(theme: any): any {
 }
 
 // any editor need setup
-export async function setupTheme (monaco: monaco, editor: monaco.editor.ICodeEditor) {
+export async function createMonacoThemeManager() {
   await loadOnigasm() // See https://www.npmjs.com/package/onigasm#light-it-up
   const registry = new Registry({
     getGrammarDefinition: async (scopeName) => {
@@ -83,6 +84,12 @@ export async function setupTheme (monaco: monaco, editor: monaco.editor.ICodeEdi
   grammars.set('vuehtml', 'source.vuehtml')
 
   monaco.editor.defineTheme("vscode-dark", convertTheme((await import("./theme/dark_vs.json")).default))
-  // monaco.editor.defineTheme("light", convertTheme((await import("./theme/light_plus.json")).default))
-  await wireTmGrammars((monaco as any), registry, grammars, (editor as any))
+  monaco.editor.defineTheme("vscode-light", convertTheme((await import("./theme/light_plus.json")).default))
+
+  return {
+    async setupTheme(editor: monaco.editor.ICodeEditor, theme: 'vscode-drak' | 'vscode-light') {
+      await wireTmGrammars((monaco as any), registry, grammars, (editor as any))
+      monaco.editor.setTheme("vscode-dark")
+    }
+  }
 }
