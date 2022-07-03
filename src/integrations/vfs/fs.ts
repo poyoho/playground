@@ -1,28 +1,49 @@
 import { EventListen } from "./eventListener"
 import { BaseFile } from "./baseFile"
+import { VueSFCFile } from "./vue-sfc"
+
+export type File = BaseFile | VueSFCFile
 
 type FileSystemEventMap<FileType> = {
   update: (file: FileType) => void;
   delete: (filename: string) => void;
 }
 
-export class FileSystem<FileType extends BaseFile> extends EventListen<FileSystemEventMap<FileType>> {
-  private files: Record<string, FileType> = {}
+export class FileSystem extends EventListen<FileSystemEventMap<File>> {
+  private files: Record<string, File> = {}
 
   constructor() {
     super()
-    console.log('[vfs]', import.meta.globEager("@/sample/vue/*", { as: "raw" }))
+    const files = import.meta.globEager("@/sample/vue/*", { as: "raw" })
+    for(const file in files) {
+      const name = file.split('/').pop()!
+      const suffix = file.split('.').pop()!
+      if (suffix === 'vue') {
+        const vueSFC = new VueSFCFile(name, files[file] as unknown as string)
+        vueSFC.suffix = suffix
+        this.writeFile(vueSFC)
+      } else {
+        const baseFile = this.writeBaseFile(name, files[file] as unknown as string)
+        baseFile.suffix = suffix
+      }
+    }
   }
 
   isExist(filename: string) {
     return this.files[filename] !== undefined
   }
 
-  readFile(filename: string): FileType | undefined {
+  readFile(filename: string): File | undefined {
     return this.files[filename]
   }
 
-  writeFile<T extends FileType> (file: T, content: string): T {
+  writeFile(file: File) {
+    this.files[file.filename] = file
+    this.emit("update", file)
+  }
+
+  writeBaseFile(name: string, content: string) {
+    const file = new BaseFile(name)
     file.content = content
     file.change = true
     this.files[file.filename] = file
@@ -38,14 +59,8 @@ export class FileSystem<FileType extends BaseFile> extends EventListen<FileSyste
   clear () {
     this.files = {}
   }
-}
 
-// export function createOrGetFile(fs: FileSystem<CompiledFile>, filename: string, content: string) {
-//   let file: CompiledFile
-//   if (fs.isExist(filename)) {
-//     file = fs.writeFile(new CompiledFile(filename), content)
-//   } else {
-//     file = fs.readFile(filename)!
-//   }
-//   return file
-// }
+  dirs() {
+    return Object.keys(this.files).map(file => this.files[file])
+  }
+}

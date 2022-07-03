@@ -19,9 +19,6 @@ function convertTheme(theme: any): any {
     rules: monacoThemeRule,
     encodedTokensColors: []
   }
-  if (theme.include) {
-    console.log(theme.include)
-  }
 
   theme.tokenColors.forEach((color: any) => {
     if (typeof color.scope === 'string') {

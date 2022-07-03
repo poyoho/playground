@@ -97,22 +97,6 @@ export class MonacoEditor {
     })
   }
 
-  createModel(
-    extension: keyof typeof SupportLanguage,
-    filename: string,
-    code?: string
-  ): monaco.editor.ITextModel {
-    return monaco.editor.createModel(
-      code || "",
-      SupportLanguage[extension],
-      monaco.Uri.file(`file://${filename}`)
-    )
-  }
-
-  findModel(filename: string) {
-    return monaco.editor.getModel(monaco.Uri.file(`file://${filename}`))
-  }
-
   setModel(model: monaco.editor.ITextModel) {
     console.log("[monaco-editor] setModel")
     this.monacoEditor.setModel(model)
@@ -123,8 +107,8 @@ export class MonacoEditor {
   }
 }
 
-export const createMonacoManager = createSinglePromise(async (wrap: HTMLElement, allTypes: SupportEditorType[]) => {
-  const editors: Record<string, MonacoEditorItem> = {}
+export const createMonacoManager = createSinglePromise(async (wrap: HTMLElement, length: number) => {
+  const editors: MonacoEditorItem[] = []
   const [_, theme] = await Promise.all([
     loadWorkers(),
     createMonacoThemeManager(),
@@ -133,34 +117,69 @@ export const createMonacoManager = createSinglePromise(async (wrap: HTMLElement,
     display: flex;
     flex-direction: column
   `
-  allTypes.forEach(type => {
-    const el = document.createElement('div')
-    const editor = new MonacoEditor(el)
-    const state = { el, editor, status: true }
-    editors[type] = state
-    state.status = true
-    theme.setupTheme(editor.monacoEditor, 'vscode-drak')
-  })
+  for(let i = 0; i < length; i++) {
+    const editorWrap = document.createElement('div')
+    editorWrap.style.width = "100%"
+    editorWrap.style.height = "100%"
+    const editor = new MonacoEditor(editorWrap)
 
-  function get(type: SupportEditorType): MonacoEditorItem {
-    return editors[type]
+    const el = document.createElement("div")
+    el.style.width = "100%"
+    el.style.height = "100%"
+    el.appendChild(editorWrap)
+
+    const state = { el, editor, status: true }
+    editors.push(state)
+    theme.setupTheme(editor.monacoEditor, 'vscode-drak')
+    wrap.appendChild(state.el)
+  }
+  active(length)
+
+  function createModel(
+    extension: SupportEditorType,
+    filename: string,
+    code?: string
+  ): monaco.editor.ITextModel {
+    return monaco.editor.createModel(
+      code || "",
+      SupportLanguage[extension],
+      monaco.Uri.file(`file://${filename}`)
+    )
   }
 
-  function hide(types: SupportEditorType[]): MonacoEditorItem[] {
-    return types.map(type => {
-      const state = editors[type]
-      state.el.remove()
+  function findModel(filename: string) {
+    return monaco.editor.getModel(monaco.Uri.file(`file://${filename}`))
+  }
+
+  function createModelIfNotExist(
+    extension: SupportEditorType,
+    filename: string,
+    code?: string
+  ) {
+    const model = findModel(filename)
+    if (!model) {
+      return createModel(extension, filename, code)
+    }
+    return model
+  }
+
+  function hideAll(): MonacoEditorItem[] {
+    return editors.map(state => {
+      state.status = false
+      state.el.style.display = "none"
+      state.el.style.height = "0%"
       return state
     })
   }
 
-  function active(types: SupportEditorType[]) {
-    hide(allTypes)
-    const height = 100 / types.length
-    return types.map(type => {
-      const state = editors[type]
+  function active(num: number) {
+    hideAll()
+    const height = 100 / num
+    return Array(num).fill(1).map((_, i) => {
+      const state = editors[i]
+      state.status = true
+      state.el.style.display = "block"
       state.el.style.height = `${height}%`
-      wrap.appendChild(state.el)
       return state
     })
   }
@@ -169,7 +188,7 @@ export const createMonacoManager = createSinglePromise(async (wrap: HTMLElement,
     monaco,
     theme,
     typescript: createMonacoTypescriptServiceManage(),
-    get,
-    active
+    active,
+    createModelIfNotExist
   }
 })
