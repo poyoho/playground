@@ -12,6 +12,7 @@ declare module 'vue' {
     LogosJavascript: typeof import('virtual:vite-icons/logos/javascript')['default']
     LogosTypescriptIcon: typeof import('virtual:vite-icons/logos/typescript-icon')['default']
     LogosVue: typeof import('virtual:vite-icons/logos/vue')['default']
+    'Mdi:loading': typeof import('virtual:vite-icons/mdi/loading')['default']
     'Mdi:packageVariantClosed': typeof import('virtual:vite-icons/mdi/package-variant-closed')['default']
     Monaco: typeof import('./src/components/monaco/monaco.vue')['default']
     Packges: typeof import('./src/components/packages/packges.vue')['default']

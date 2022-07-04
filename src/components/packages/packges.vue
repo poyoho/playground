@@ -18,7 +18,7 @@ const keyword = ref('')
 const packageMeta = ref<Packages>({ dependencies: {} })
 const packages = ref<PackageMeta[]>()
 const versionRecord = ref<{
-  [key: string]: { list: string[], current: string }
+  [key: string]: { list: string[], current: string, loading: boolean }
 }>({})
 
 function updatePackage() {
@@ -66,14 +66,19 @@ async function fetchPackageVersionList(pkgName: string) {
   const list = Object.keys(packageData.versions).slice(-10, -1).reverse()
   versionRecord.value[pkgName] = {
     list,
-    current: list[0]
+    current: list[0],
+    loading: false
   }
 }
 
 async function installPackage(pkgName: string, version: string) {
+  console.log('[installPackage]', pkgName, version)
+  const meta = versionRecord.value[pkgName]
+  meta.loading = true
   const pkg = await resolvePackageMetadata(pkgName, version)
-  console.log(pkg)
-  // fs.writeBaseFile('packages.json', JSON.stringify(packageMeta.value, null, 2))
+  Object.assign(packageMeta.value.dependencies, pkg)
+  fs.writeBaseFile('packages.json', JSON.stringify(packageMeta.value, null, 2))
+  meta.loading = false
 }
 
 function uninstallPackage(pkgName: string) {
@@ -111,14 +116,14 @@ function uninstallPackage(pkgName: string) {
           {{ pkg.description }}
         </p>
         <p flex justify-end v-if="props.active === 'Packages' && !packageMeta.dependencies[pkg.name]">
-          <carbon:package h-6 w-6 cursor-pointer v-if="!versionRecord[pkg.name]" @click="fetchPackageVersionList(pkg.name)"></carbon:package>
+          <carbon:package cursor-pointer h-6 w-6 v-if="!versionRecord[pkg.name]" @click="fetchPackageVersionList(pkg.name)"></carbon:package>
           <p v-else relative select-none flex items-center flex-gap-3>
-            <Expand w-30 bg-dark-9 p-2 rounded-lg inline text-center>
-              <p cursor-pointer>{{ versionRecord[pkg.name].current }}</p>
+            <Expand w-30 bg-dark-9 p-2 rounded-lg inline text-center cursor-pointer>
+              <p>{{ versionRecord[pkg.name].current }}</p>
               <template #view>
                 <ul absolute top-12 left-1 rounded-lg overflow-hidden>
                   <li
-                  bg-dark-1 text-light-1 line-clamp-1 py-2 px-1 text-4 hover:bg-dark-6 cursor-pointer w-30
+                  bg-dark-1 text-light-1 line-clamp-1 py-2 px-1 text-4 hover:bg-dark-6 w-30 cursor-pointer
                     v-for="ver in versionRecord[pkg.name].list"
                     :value="ver"
                     :key="ver"
@@ -129,11 +134,16 @@ function uninstallPackage(pkgName: string) {
                 </ul>
               </template>
             </Expand>
-            <ic:baseline-check inline @click="installPackage(pkg.name, versionRecord[pkg.name].current)"/>
+            <ic:baseline-check
+              inline cursor-pointer
+              v-if="!versionRecord[pkg.name].loading"
+              @click="installPackage(pkg.name, versionRecord[pkg.name].current)"
+            />
+            <mdi:loading v-else inline cursor-pointer animate-spin />
           </p>
         </p>
         <p flex justify-end v-else>
-          <ph:trash flex justify-end h-6 w-6 @click="uninstallPackage(pkg.name)"></ph:trash>
+          <ph:trash cursor-pointer flex justify-end h-6 w-6 @click="uninstallPackage(pkg.name)"></ph:trash>
         </p>
       </div>
     </div>

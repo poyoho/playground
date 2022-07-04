@@ -109,7 +109,7 @@ function bootstrap() {
 <div class="wrap" flex flex-col h-full overflow-hidden>
   <ul flex justify-start items-center shadow-lg>
     <li
-      bg-dark-1 text-light cursor-pointer h-full p-2 px-3 text-3
+      bg-dark-1 text-light  h-full p-2 px-3 text-3
       border-r-1 border-solid border-dark-400
       :class="active.filename === item.filename ? 'bg-dark-9' : ''"
       v-for="item in fileNames" :name="item.filename" :key="item.filename"
@@ -126,9 +126,9 @@ function bootstrap() {
   </ul>
   <div w-full h-full flex text-light>
     <div class="menu" w-10 flex justify-start flex-col items-center flex-gap-2>
-      <gg:browser w-6 h-6 m-2 cursor-pointer :class="menuActive === 'Preview' ? 'text-white' : 'text-gray'" @click="clickMenu('Preview')"/>
-      <ri:install-line w-6 h-6 m-2 cursor-pointer :class="menuActive === 'Installed' ? 'text-white' : 'text-gray'" @click="clickMenu('Installed')"/>
-      <mdi:package-variant-closed w-6 h-6 m-2 cursor-pointer :class="menuActive === 'Packages' ? 'text-white' : 'text-gray'" @click="clickMenu('Packages')"/>
+      <gg:browser w-6 h-6 m-2  :class="menuActive === 'Preview' ? 'text-white' : 'text-gray'" @click="clickMenu('Preview')"/>
+      <ri:install-line w-6 h-6 m-2  :class="menuActive === 'Installed' ? 'text-white' : 'text-gray'" @click="clickMenu('Installed')"/>
+      <mdi:package-variant-closed w-6 h-6 m-2  :class="menuActive === 'Packages' ? 'text-white' : 'text-gray'" @click="clickMenu('Packages')"/>
     </div>
     <div class="edit-wrap" flex-1>
       <MonacoEditor ref="monaco" />

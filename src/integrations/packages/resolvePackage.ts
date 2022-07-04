@@ -3,6 +3,8 @@ export interface Package {
   version: string
   types: string
   url: string
+  source: string
+  description: string
 }
 
 export type PackageDependencies = Record<string, Omit<Package, 'name'>>
@@ -14,6 +16,8 @@ export interface PackageMetadata {
   types: string
   main: string
   module: string
+  unpkg: string
+  description: string
   dependencies: Record<string, string>
 }
 
@@ -71,7 +75,9 @@ export async function resolvePackageData(pkgName: string): Promise<PackageData> 
   if (!response.ok) {
     throw "load package data error"
   }
-  return await response.json()
+  const res = await response.json()
+  console.log('[resolvePackageData]', res)
+  return res
 }
 
 export async function resolvePackageMetadata(name: string, version: string): Promise<PackageMetadata> {
@@ -80,15 +86,17 @@ export async function resolvePackageMetadata(name: string, version: string): Pro
   {
     throw new Error('Error Resolving Package Data')
   }
-  return await response.json()
+  const res = await response.json()
+  console.log('[resolvePackageMetadata]', res)
+  return res
 }
 
 async function resolvePackageList(name: string, version: string): Promise<Package[]> {
   const packages: Package[] = []
   const metadata = await resolvePackageMetadata(name, version)
+  console.log('[resolvePackageList]', metadata)
 
   if (!(metadata instanceof Error)) {
-    const typesEntry = metadata.types
     const dependencies = Object.entries(metadata.dependencies || []).map(([name, version]) => ({ name, version }))
     const resolvedDeps = await Promise.allSettled(dependencies.map(({ name, version }) => resolvePackage(name, version)))
 
@@ -96,8 +104,10 @@ async function resolvePackageList(name: string, version: string): Promise<Packag
       {
         name: metadata.name,
         version: metadata.version,
-        url: metadata.module || metadata.main,
-        types: typesEntry,
+        url: metadata.unpkg || metadata.module || metadata.main,
+        types: metadata.types,
+        description: metadata.description,
+        source: 'NETWORK'
       },
       ...resolvedDeps
         .filter((result) => result.status === 'fulfilled')
@@ -117,6 +127,8 @@ export async function resolvePackage(name: string, version: string): Promise<Pac
       version: pkg.version,
       types: pkg.types,
       url: pkg.url,
+      description: pkg.description,
+      source: pkg.source,
     }
   })
   return deps
