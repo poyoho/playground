@@ -36,6 +36,7 @@ export class FileSystem extends EventListen<FileSystemEventMap<File>> {
       }
     }
     this.readFile('bootstrap.js')!.private = true
+    this.readFile('packages.json')!.private = true
   }
 
   isExist(filename: string) {

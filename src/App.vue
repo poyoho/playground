@@ -3,11 +3,13 @@ import { Sandbox, SandboxHandleData, SandboxExpose } from "@/components/iframe"
 import { MonacoEditor, MonacoEditorExpose } from "@/components/monaco"
 import { TabsWrap, TabItem, Tabs } from "@/components/tabs/tabs"
 import { fs, File, VueSFCFile, CompileFile } from "@/integrations/vfs"
+import PackagesManager from "@/components/packages/packges.vue"
 
 const sandbox = ref<SandboxExpose>()
 const monaco = ref<MonacoEditorExpose>()
 const fileNames = ref(fs.dirs())
 const active = ref<File>(fileNames.value[0])
+const menuActive = ref('')
 
 fs.subscribe('update', () => {
   fileNames.value = fs.dirs()
@@ -16,7 +18,6 @@ fs.subscribe('update', () => {
 fs.subscribe('delete', () => {
   fileNames.value = fs.dirs()
 })
-
 onMounted(async () => {
   const monacoManager = await monaco.value!.manager.promise
   const sandboxInstance = sandbox.value!
@@ -69,6 +70,14 @@ function close(file: string) {
   fs.removeFile(file)
 }
 
+function clickMenu(menu: string) {
+  const configFile = fs.readFile('packages.json')!
+  configFile.private = false
+  fileNames.value = fs.dirs()
+  active.value = configFile
+  menuActive.value = menu
+}
+
 function bootstrap() {
   return fs.readFile('bootstrap.js')!.content
 }
@@ -94,14 +103,17 @@ function bootstrap() {
       </TabItem>
     </Tabs>
   </TabsWrap>
-  <div w-full h-full flex>
-    <div class="menu" w-10>
-
+  <div w-full h-full flex text-light>
+    <div class="menu" w-10 flex justify-start flex-col items-center flex-gap-2>
+      <ri:install-line w-6 h-6 m-2 cursor-pointer @click="clickMenu('installed')"/>
+      <mdi:package-variant-closed w-6 h-6 m-2 cursor-pointer @click="clickMenu('packages')"/>
     </div>
+    
     <div class="edit-wrap" w="1/2">
       <MonacoEditor ref="monaco" />
     </div>
     <div w="1/2" h-full>
+      <PackagesManager v-if="active.filename === 'packages.json'"/>
       <Sandbox ref="sandbox" :load-modules="loadModules"></Sandbox>
     </div>
   </div>
