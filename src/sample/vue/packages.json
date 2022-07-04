@@ -1,9 +1,13 @@
-[
-  {
-    "name": "vue",
-    "source": "local",
-    "description": "vue library",
-    "url": "/vue.runtime.esm-browser.prod.js",
-    "version": "3.2.37"
+{
+  "name": "vue",
+  "version": "0.0.1",
+  "dependencies": {
+    "vue": {
+      "source": "LOCAL",
+      "description": "vue library",
+      "url": "/vue.runtime.esm-browser.prod.js",
+      "types": "/vue.d.ts",
+      "version": "3.2.37"
+    }
   }
-]
+}

@@ -8,6 +8,7 @@ export interface FileCompile {
 }
 
 export class VueSFCFile extends BaseFile {
+  public suffix = 'vue'
   public script = ''
   public template = ''
   public compiled: FileCompile = {
@@ -30,13 +31,17 @@ export class VueSFCFile extends BaseFile {
   }
 
   async compileFile() {
-    const compiled = await compileVueSFCFile(this.filename, [
+    const compiled = await compileVueSFCFile(this.filename, this.toString())
+    this.compiled = compiled
+    console.log('[compileFile]', this.compiled);
+  }
+
+  toString() {
+    return [
       this.template,
       '<script type="script" setup>',
       this.script,
       '</script>',
-    ].join('\n'))
-    this.compiled = compiled
-    console.log('[compileFile]', this.compiled);
+    ].join('\n')
   }
 }

@@ -1,18 +1,33 @@
 <script setup lang="ts">
 import { Sandbox, SandboxHandleData, SandboxExpose } from "@/components/iframe"
 import { MonacoEditor, MonacoEditorExpose } from "@/components/monaco"
-import { TabsWrap, TabItem, Tabs } from "@/components/tabs/tabs"
 import { fs, File, VueSFCFile, CompileFile } from "@/integrations/vfs"
-import PackagesManager from "@/components/packages/packges.vue"
+import { PackagesManager } from "@/components/packages"
 
 const sandbox = ref<SandboxExpose>()
 const monaco = ref<MonacoEditorExpose>()
 const fileNames = ref(fs.dirs())
 const active = ref<File>(fileNames.value[0])
-const menuActive = ref('')
+const menuActive = ref('Preview')
 
-fs.subscribe('update', () => {
+fs.subscribe('update', async (file) => {
   fileNames.value = fs.dirs()
+  if (!monaco.value) {
+    return
+  }
+  const monacoManager = await monaco.value.manager.promise
+  const editors = monacoManager.getActiveEditor()
+  if (!editors) {
+    return
+  }
+  if (file.suffix === 'vue') {
+    const [editor1, editor2] = editors
+    editor1.editor.monacoEditor.setValue((file as VueSFCFile).template)
+    editor2.editor.monacoEditor.setValue((file as VueSFCFile).script)
+  } else {
+    const [editor1] = editors
+    editor1.editor.monacoEditor.setValue(file.toString())
+  }
 })
 
 fs.subscribe('delete', () => {
@@ -71,12 +86,20 @@ function close(file: string) {
 }
 
 function clickMenu(menu: string) {
-  const configFile = fs.readFile('packages.json')!
-  configFile.private = false
-  fileNames.value = fs.dirs()
-  active.value = configFile
   menuActive.value = menu
+  switch(menu) {
+    case 'Installed':
+    case 'Packages':
+      const configFile = fs.readFile('packages.json')!
+      configFile.private = false
+      fileNames.value = fs.dirs()
+      active.value = configFile
+      break
+    case 'Preview':
+      break
+  }
 }
+
 
 function bootstrap() {
   return fs.readFile('bootstrap.js')!.content
@@ -84,37 +107,35 @@ function bootstrap() {
 </script>
 <template>
 <div class="wrap" flex flex-col h-full overflow-hidden>
-  <TabsWrap shadow-lg>
-    <Tabs flex justify-start items-center>
-      <TabItem
-        bg-dark-1 text-light cursor-pointer h-full p-2 px-3 text-3
-        border-r-1 border-solid border-dark-400
-        :class="active.filename === item.filename ? 'bg-dark-9' : ''"
-        v-for="item in fileNames" :name="item.filename" :key="item.filename"
-      >
-        <p flex items-center justify-center flex-gap-2 @click="active = item">
-          <logos-vue v-if="item.suffix === 'vue'" />
-          <vscode-icons:file-type-light-json v-if="item.suffix === 'json'" />
-          <logos-javascript v-if="item.suffix === 'js'" />
-          <logos-typescript-icon v-if="item.suffix === 'ts'" />
-          {{ item.filename }}
-          <ic:round-close v-if="active.filename === item.filename" @click="close(item.filename)"/>
-        </p>
-      </TabItem>
-    </Tabs>
-  </TabsWrap>
+  <ul flex justify-start items-center shadow-lg>
+    <li
+      bg-dark-1 text-light cursor-pointer h-full p-2 px-3 text-3
+      border-r-1 border-solid border-dark-400
+      :class="active.filename === item.filename ? 'bg-dark-9' : ''"
+      v-for="item in fileNames" :name="item.filename" :key="item.filename"
+    >
+      <p flex items-center justify-center flex-gap-2 @click="active = item">
+        <logos-vue v-if="item.suffix === 'vue'" />
+        <vscode-icons:file-type-light-json v-if="item.suffix === 'json'" />
+        <logos-javascript v-if="item.suffix === 'js'" />
+        <logos-typescript-icon v-if="item.suffix === 'ts'" />
+        {{ item.filename }}
+        <ic:round-close v-if="active.filename === item.filename" @click="close(item.filename)"/>
+      </p>
+    </li>
+  </ul>
   <div w-full h-full flex text-light>
     <div class="menu" w-10 flex justify-start flex-col items-center flex-gap-2>
-      <ri:install-line w-6 h-6 m-2 cursor-pointer @click="clickMenu('installed')"/>
-      <mdi:package-variant-closed w-6 h-6 m-2 cursor-pointer @click="clickMenu('packages')"/>
+      <gg:browser w-6 h-6 m-2 cursor-pointer :class="menuActive === 'Preview' ? 'text-white' : 'text-gray'" @click="clickMenu('Preview')"/>
+      <ri:install-line w-6 h-6 m-2 cursor-pointer :class="menuActive === 'Installed' ? 'text-white' : 'text-gray'" @click="clickMenu('Installed')"/>
+      <mdi:package-variant-closed w-6 h-6 m-2 cursor-pointer :class="menuActive === 'Packages' ? 'text-white' : 'text-gray'" @click="clickMenu('Packages')"/>
     </div>
-    
-    <div class="edit-wrap" w="1/2">
+    <div class="edit-wrap" flex-1>
       <MonacoEditor ref="monaco" />
     </div>
     <div w="1/2" h-full>
-      <PackagesManager v-if="active.filename === 'packages.json'"/>
-      <Sandbox ref="sandbox" :load-modules="loadModules"></Sandbox>
+      <Sandbox v-show="menuActive === 'Preview'" ref="sandbox" :load-modules="loadModules"></Sandbox>
+      <PackagesManager v-if="['Installed', 'Packages'].includes(menuActive)" :active="menuActive"></PackagesManager>
     </div>
   </div>
 </div>

@@ -185,11 +185,16 @@ export const createMonacoManager = createSinglePromise(async (wrap: HTMLElement,
     })
   }
 
+  function getActiveEditor() {
+    return editors.filter(state => state.status)
+  }
+
   return {
     monaco,
     theme,
     typescript: createMonacoTypescriptServiceManage(),
     active,
+    getActiveEditor,
     createModelIfNotExist
   }
 })

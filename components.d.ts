@@ -3,6 +3,10 @@
 
 declare module 'vue' {
   export interface GlobalComponents {
+    'Carbon:package': typeof import('virtual:vite-icons/carbon/package')['default']
+    Expand: typeof import('./src/components/expand.vue')['default']
+    'Gg:browser': typeof import('virtual:vite-icons/gg/browser')['default']
+    'Ic:baselineCheck': typeof import('virtual:vite-icons/ic/baseline-check')['default']
     'Ic:roundClose': typeof import('virtual:vite-icons/ic/round-close')['default']
     'Ic:roundSettings': typeof import('virtual:vite-icons/ic/round-settings')['default']
     LogosJavascript: typeof import('virtual:vite-icons/logos/javascript')['default']
@@ -11,6 +15,7 @@ declare module 'vue' {
     'Mdi:packageVariantClosed': typeof import('virtual:vite-icons/mdi/package-variant-closed')['default']
     Monaco: typeof import('./src/components/monaco/monaco.vue')['default']
     Packges: typeof import('./src/components/packages/packges.vue')['default']
+    'Ph:trash': typeof import('virtual:vite-icons/ph/trash')['default']
     'Ri:installLine': typeof import('virtual:vite-icons/ri/install-line')['default']
     Sandbox: typeof import('./src/components/iframe/sandbox.vue')['default']
     View: typeof import('./src/components/dialog/view.vue')['default']

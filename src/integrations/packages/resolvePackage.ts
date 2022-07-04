@@ -2,8 +2,10 @@ export interface Package {
   name: string
   version: string
   types: string
-  entry: string
+  url: string
 }
+
+export type PackageDependencies = Record<string, Omit<Package, 'name'>>
 
 // package.json
 export interface PackageMetadata {
@@ -64,7 +66,7 @@ export async function resolveRecommendPackage (keyword: string) {
   return (await response.json()).results
 }
 
-export async function resolvePackageData (pkgName: string): Promise<PackageData> {
+export async function resolvePackageData(pkgName: string): Promise<PackageData> {
   const response = await fetch(SKYPACK_PACKAGEDATA(pkgName))
   if (!response.ok) {
     throw "load package data error"
@@ -81,7 +83,7 @@ export async function resolvePackageMetadata(name: string, version: string): Pro
   return await response.json()
 }
 
-export async function resolvePackage(name: string, version: string) {
+async function resolvePackageList(name: string, version: string): Promise<Package[]> {
   const packages: Package[] = []
   const metadata = await resolvePackageMetadata(name, version)
 
@@ -94,15 +96,28 @@ export async function resolvePackage(name: string, version: string) {
       {
         name: metadata.name,
         version: metadata.version,
-        entry: metadata.module || metadata.main,
+        url: metadata.module || metadata.main,
         types: typesEntry,
       },
       ...resolvedDeps
-        .filter((result): result is PromiseFulfilledResult<Package[]> => result.status === 'fulfilled')
-        .map(result => result.value)
+        .filter((result) => result.status === 'fulfilled')
+        .map((result: any) => result.value)
         .flat()
     )
   }
 
   return packages.filter((p, i) => packages.findIndex(x => x.name === p.name) === i)
+}
+
+export async function resolvePackage(name: string, version: string): Promise<PackageDependencies> {
+  const packages = await resolvePackageList(name, version)
+  const deps: PackageDependencies = {}
+  packages.forEach(pkg => {
+    deps[pkg.name] = {
+      version: pkg.version,
+      types: pkg.types,
+      url: pkg.url,
+    }
+  })
+  return deps
 }
