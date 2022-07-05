@@ -8,7 +8,7 @@ import Components from 'vite-plugin-components'
 import Unocss from 'unocss/vite'
 
 export default defineConfig({
-  base: './',
+  base: '/playground/',
   resolve: {
     alias: {
       '@/': `${path.resolve('src')}/`
