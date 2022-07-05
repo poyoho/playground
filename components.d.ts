@@ -9,7 +9,6 @@ declare module 'vue' {
     'Ic:baselineCheck': typeof import('virtual:vite-icons/ic/baseline-check')['default']
     'Ic:roundBolt': typeof import('virtual:vite-icons/ic/round-bolt')['default']
     'Ic:roundClose': typeof import('virtual:vite-icons/ic/round-close')['default']
-    'Ic:roundSettings': typeof import('virtual:vite-icons/ic/round-settings')['default']
     LogosJavascript: typeof import('virtual:vite-icons/logos/javascript')['default']
     LogosTypescriptIcon: typeof import('virtual:vite-icons/logos/typescript-icon')['default']
     LogosVue: typeof import('virtual:vite-icons/logos/vue')['default']
@@ -20,7 +19,6 @@ declare module 'vue' {
     'Ph:trash': typeof import('virtual:vite-icons/ph/trash')['default']
     'Ri:installLine': typeof import('virtual:vite-icons/ri/install-line')['default']
     Sandbox: typeof import('./src/components/iframe/sandbox.vue')['default']
-    View: typeof import('./src/components/dialog/view.vue')['default']
     'VscodeIcons:fileTypeLightJson': typeof import('virtual:vite-icons/vscode-icons/file-type-light-json')['default']
   }
 }

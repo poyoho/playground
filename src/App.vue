@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import '@unocss/reset/tailwind.css'
+import './styles/main.css'
+import 'uno.css'
 import { fs, File, VueSFCFile, CompileFile } from "@/integrations/vfs"
 import { Sandbox, SandboxHandleData, SandboxExpose } from "@/components/iframe"
 import { MonacoEditor, MonacoEditorExpose } from "@/components/monaco"
