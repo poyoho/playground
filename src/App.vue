@@ -177,8 +177,8 @@ function sharedPlayground() {
       <gg:browser w-6 h-6 m-2 :class="menuActive === 'Preview' ? 'text-white' : 'text-gray'" @click="clickMenu('Preview')"/>
       <ri:install-line w-6 h-6 m-2 :class="menuActive === 'Installed' ? 'text-white' : 'text-gray'" @click="clickMenu('Installed')"/>
       <mdi:package-variant-closed w-6 h-6 m-2 :class="menuActive === 'Packages' ? 'text-white' : 'text-gray'" @click="clickMenu('Packages')"/>
-      <ic:round-bolt @click="bootstrap" />
-      <ic:sharp-share @click="sharedPlayground"/>
+      <ic:round-bolt w-6 h-6 m-2 @click="bootstrap" />
+      <ic:sharp-share w-6 h-6 m-2 @click="sharedPlayground"/>
     </div>
     <div class="edit-wrap" flex-1>
       <MonacoEditor ref="monaco" />
