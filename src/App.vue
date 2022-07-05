@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { fs, File, VueSFCFile, CompileFile } from "@/integrations/vfs"
 import { Sandbox, SandboxHandleData, SandboxExpose } from "@/components/iframe"
 import { MonacoEditor, MonacoEditorExpose } from "@/components/monaco"
-import { fs, File, VueSFCFile, CompileFile } from "@/integrations/vfs"
 import { PackagesManager } from "@/components/packages"
 
 const sandbox = ref<SandboxExpose>()
@@ -9,25 +9,10 @@ const monaco = ref<MonacoEditorExpose>()
 const fileNames = ref(fs.dirs())
 const active = ref<File>(fileNames.value[0])
 const menuActive = ref('Preview')
+const fileRE = /(\/file:\/\/)(.*)?\.(html|vuehtml|ts|js|json)/
 
-fs.subscribe('update', async (file) => {
+fs.subscribe('update', () => {
   fileNames.value = fs.dirs()
-  if (!monaco.value) {
-    return
-  }
-  const monacoManager = await monaco.value.manager.promise
-  const editors = monacoManager.getActiveEditor()
-  if (!editors) {
-    return
-  }
-  if (file.suffix === 'vue') {
-    const [editor1, editor2] = editors
-    editor1.editor.monacoEditor.setValue((file as VueSFCFile).template)
-    editor2.editor.monacoEditor.setValue((file as VueSFCFile).script)
-  } else {
-    const [editor1] = editors
-    editor1.editor.monacoEditor.setValue(file.toString())
-  }
 })
 
 fs.subscribe('delete', () => {
@@ -35,7 +20,6 @@ fs.subscribe('delete', () => {
 })
 onMounted(async () => {
   const monacoManager = await monaco.value!.manager.promise
-  const sandboxInstance = sandbox.value!
   watch(active, async () => {
     const { filename, suffix, content } = active.value
     if (active.value.suffix === 'vue') {
@@ -54,8 +38,27 @@ onMounted(async () => {
       const model1 = monacoManager.createModelIfNotExist(suffix as any, filename, content)
       editor1.editor.setModel(model1)
     }
-    sandboxInstance.evalShim(bootstrap())
+    bootstrap()
   }, { immediate: true })
+
+  // monaco editor change content
+  monacoManager.onDidChangeContent((e, model) => {
+    const [_, __, filename, suffix] = fileRE.exec(model.uri.path)!
+    const content = model.getValue()
+    // write to virtual file system
+    if (filename.endsWith('.vue')) {
+      const file = fs.readFile(filename) as VueSFCFile
+      if (suffix === 'vuehtml') {
+        file.template = content
+      } else {
+        file.script = content
+      }
+    } else {
+      const file = fs.readFile(filename + '.' + suffix)!
+      file.content = content
+      fs.writeFile(file)
+    }
+  })
 })
 
 async function loadModules(data: SandboxHandleData): Promise<string> {
@@ -100,14 +103,34 @@ function clickMenu(menu: string) {
   }
 }
 
-
 function bootstrap() {
-  return fs.readFile('bootstrap.js')!.content
+  console.log('[bootstrap]')
+  const script = fs.readFile('bootstrap.js')!.content
+  sandbox.value?.evalShim(script)
+}
+
+async function refreshMonacoEditor(file: File) {
+  if (!monaco.value) {
+    return
+  }
+  const monacoManager = await monaco.value.manager.promise
+  const editors = monacoManager.getActiveEditor()
+  if (!editors) {
+    return
+  }
+  if (file.suffix === 'vue') {
+    const [editor1, editor2] = editors
+    editor1.editor.monacoEditor.setValue((file as VueSFCFile).template)
+    editor2.editor.monacoEditor.setValue((file as VueSFCFile).script)
+  } else {
+    const [editor1] = editors
+    editor1.editor.monacoEditor.setValue(file.toString())
+  }
 }
 </script>
 <template>
 <div class="wrap" flex flex-col h-full overflow-hidden>
-  <ul flex justify-start items-center shadow-lg>
+  <ul flex justify-start items-center shadow-lg cursor-default>
     <li
       bg-dark-1 text-light  h-full p-2 px-3 text-3
       border-r-1 border-solid border-dark-400
@@ -120,22 +143,23 @@ function bootstrap() {
         <logos-javascript v-if="item.suffix === 'js'" />
         <logos-typescript-icon v-if="item.suffix === 'ts'" />
         {{ item.filename }}
-        <ic:round-close v-if="active.filename === item.filename" @click="close(item.filename)"/>
+        <ic:round-close v-if="active.filename === item.filename" @click="close(item.filename)" cursor-pointer />
       </p>
     </li>
   </ul>
   <div w-full h-full flex text-light>
     <div class="menu" w-10 flex justify-start flex-col items-center flex-gap-2>
-      <gg:browser w-6 h-6 m-2  :class="menuActive === 'Preview' ? 'text-white' : 'text-gray'" @click="clickMenu('Preview')"/>
-      <ri:install-line w-6 h-6 m-2  :class="menuActive === 'Installed' ? 'text-white' : 'text-gray'" @click="clickMenu('Installed')"/>
-      <mdi:package-variant-closed w-6 h-6 m-2  :class="menuActive === 'Packages' ? 'text-white' : 'text-gray'" @click="clickMenu('Packages')"/>
+      <gg:browser w-6 h-6 m-2 :class="menuActive === 'Preview' ? 'text-white' : 'text-gray'" @click="clickMenu('Preview')"/>
+      <ri:install-line w-6 h-6 m-2 :class="menuActive === 'Installed' ? 'text-white' : 'text-gray'" @click="clickMenu('Installed')"/>
+      <mdi:package-variant-closed w-6 h-6 m-2 :class="menuActive === 'Packages' ? 'text-white' : 'text-gray'" @click="clickMenu('Packages')"/>
+      <ic:round-bolt @click="bootstrap"></ic:round-bolt>
     </div>
     <div class="edit-wrap" flex-1>
       <MonacoEditor ref="monaco" />
     </div>
     <div w="1/2" h-full>
       <Sandbox v-show="menuActive === 'Preview'" ref="sandbox" :load-modules="loadModules"></Sandbox>
-      <PackagesManager v-if="['Installed', 'Packages'].includes(menuActive)" :active="menuActive"></PackagesManager>
+      <PackagesManager v-if="['Installed', 'Packages'].includes(menuActive)" :active="menuActive" @update="refreshMonacoEditor"></PackagesManager>
     </div>
   </div>
 </div>

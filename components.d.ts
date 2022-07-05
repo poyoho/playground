@@ -7,6 +7,7 @@ declare module 'vue' {
     Expand: typeof import('./src/components/expand.vue')['default']
     'Gg:browser': typeof import('virtual:vite-icons/gg/browser')['default']
     'Ic:baselineCheck': typeof import('virtual:vite-icons/ic/baseline-check')['default']
+    'Ic:roundBolt': typeof import('virtual:vite-icons/ic/round-bolt')['default']
     'Ic:roundClose': typeof import('virtual:vite-icons/ic/round-close')['default']
     'Ic:roundSettings': typeof import('virtual:vite-icons/ic/round-settings')['default']
     LogosJavascript: typeof import('virtual:vite-icons/logos/javascript')['default']

@@ -14,6 +14,10 @@ const props = defineProps({
   }
 })
 
+const emit = defineEmits([
+  'update'
+])
+
 const keyword = ref('')
 const packageMeta = ref<Packages>({ dependencies: {} })
 const packages = ref<PackageMeta[]>()
@@ -77,13 +81,15 @@ async function installPackage(pkgName: string, version: string) {
   meta.loading = true
   const pkg = await resolvePackageMetadata(pkgName, version)
   Object.assign(packageMeta.value.dependencies, pkg)
-  fs.writeBaseFile('packages.json', JSON.stringify(packageMeta.value, null, 2))
+  const file = fs.writeBaseFile('packages.json', JSON.stringify(packageMeta.value, null, 2))
   meta.loading = false
+  emit('update', file)
 }
 
 function uninstallPackage(pkgName: string) {
   delete packageMeta.value.dependencies[pkgName]
-  fs.writeBaseFile('packages.json', JSON.stringify(packageMeta.value, null, 2))
+  const file = fs.writeBaseFile('packages.json', JSON.stringify(packageMeta.value, null, 2))
+  emit('update', file)
 }
 
 </script>

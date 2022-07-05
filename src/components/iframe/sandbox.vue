@@ -4,8 +4,6 @@ import srcdoc from "./srcdoc.html?raw"
 import { createDefer } from "@/utils/promise"
 import { PropType } from "vue";
 
-// const IMPORT_MAP = "<!-- IMPORT_MAP -->"
-
 const emit = defineEmits([
   'fetch_progress',
   'error',
@@ -62,18 +60,20 @@ defineExpose({
 </script>
 
 <template>
-  <iframe
-    ref="sandbox"
-    w-full h-full border-0 outline-0
-    allow-forms
-    allow-modals
-    allow-pointer-lock
-    allow-popups
-    allow-same-origin
-    allow-scripts
-    allow-top-navigation-by-user-activation
-    @load="iframeLoad"
-    :srcdoc="srcdoc"
-  >
-  </iframe>
+  <div w-full h-full>
+    <iframe
+      ref="sandbox"
+      w-full h-full border-0 outline-0
+      allow-forms
+      allow-modals
+      allow-pointer-lock
+      allow-popups
+      allow-same-origin
+      allow-scripts
+      allow-top-navigation-by-user-activation
+      @load="iframeLoad"
+      :srcdoc="srcdoc"
+    >
+    </iframe>
+  </div>
 </template>
