@@ -5,7 +5,7 @@
     "vue": {
       "source": "LOCAL",
       "description": "vue library",
-      "url": "/vue.runtime.esm-browser.prod.js",
+      "url": "/lib/vue.runtime.esm-browser.prod.js",
       "types": "/vue.d.ts",
       "version": "3.2.37"
     }

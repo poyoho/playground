@@ -18,6 +18,10 @@ const props = defineProps({
   loadModules: {
     type: Function as PropType<(data: SandboxHandleData) => Promise<string>>,
     required: true
+  },
+  resolveId: {
+    type: Function as PropType<(data: SandboxHandleData) => Promise<string>>,
+    required: true
   }
 })
 
@@ -41,6 +45,7 @@ function iframeLoad() {
     on_console_group_collapsed: (data: SandboxHandleData) => emit("console_group_collapsed", data),
     on_console_group_end: (data: SandboxHandleData) => emit("console_group_end", data),
     on_load: (data: SandboxHandleData) => props.loadModules(data),
+    on_resolve: (data: SandboxHandleData) => props.resolveId(data),
   })
   proxy.resolve(sandboxProxy)
 }

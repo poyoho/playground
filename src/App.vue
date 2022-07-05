@@ -5,7 +5,7 @@ import 'uno.css'
 import { fs, File, VueSFCFile, CompileFile } from "@/integrations/vfs"
 import { Sandbox, SandboxHandleData, SandboxExpose } from "@/components/iframe"
 import { MonacoEditor, MonacoEditorExpose } from "@/components/monaco"
-import { PackagesManager } from "@/components/packages"
+import { Packages, PackagesManager } from "@/components/packages"
 
 const sandbox = ref<SandboxExpose>()
 const monaco = ref<MonacoEditorExpose>()
@@ -13,8 +13,10 @@ const fileNames = ref(fs.dirs())
 const active = ref<File>(fileNames.value[0])
 const menuActive = ref('Preview')
 const fileRE = /(\/file:\/\/)(.*)?\.(html|vuehtml|ts|js|json)/
+const packageMeta = ref<Packages>(JSON.parse(fs.readFile('packages.json')!.content))
 
 fs.subscribe('update', () => {
+  packageMeta.value = JSON.parse(fs.readFile('packages.json')!.content) as Packages
   fileNames.value = fs.dirs()
 })
 
@@ -41,9 +43,7 @@ onMounted(async () => {
       const model1 = monacoManager.createModelIfNotExist(suffix as any, filename, content)
       editor1.editor.setModel(model1)
     }
-    bootstrap()
   }, { immediate: true })
-
   // monaco editor change content
   monacoManager.onDidChangeContent((e, model) => {
     const [_, __, filename, suffix] = fileRE.exec(model.uri.path)!
@@ -62,11 +62,14 @@ onMounted(async () => {
       fs.writeFile(file)
     }
   })
+  bootstrap()
 })
 
 async function loadModules(data: SandboxHandleData): Promise<string> {
-  if (data.id?.startsWith('./')) {
-    const filename = data.id.replace('./', '')
+  const [id, _] = data.id!.split('?')
+  console.log('[resolveId]', id)
+  if (id.startsWith('./')) {
+    const filename = id.replace('./', '')
     const file = fs.readFile(filename)
     if (!file) {
       throw 'no found file'
@@ -81,10 +84,19 @@ async function loadModules(data: SandboxHandleData): Promise<string> {
       return compileFile.compiled.js
     }
   }
-  // module path (extract module)
-  console.log('[loadModules]', data.id)
-  const res = await fetch('/vue.runtime.esm-browser.prod.js')
-  return await res.text()
+  throw 'can not load the file: ' + data.id!
+}
+
+async function resolveId(data: SandboxHandleData): Promise<string> {
+  console.log('[resolveId]', data.id)
+  if (data.id?.startsWith('./')) {
+    return data.id! + '?t=' + Date.now()
+  }
+  const dep = packageMeta.value.dependencies[data.id!]
+  if (dep) {
+    return dep.url.startsWith('/') ? window.location.href + dep.url : dep.url
+  }
+  return data.id!
 }
 
 function close(file: string) {
@@ -161,7 +173,13 @@ async function refreshMonacoEditor(file: File) {
       <MonacoEditor ref="monaco" />
     </div>
     <div w="1/2" h-full>
-      <Sandbox v-show="menuActive === 'Preview'" ref="sandbox" :load-modules="loadModules"></Sandbox>
+      <Sandbox
+        v-show="menuActive === 'Preview'"
+        ref="sandbox"
+        :load-modules="loadModules"
+        :resolve-id="resolveId"
+      >
+      </Sandbox>
       <PackagesManager v-if="['Installed', 'Packages'].includes(menuActive)" :active="menuActive" @update="refreshMonacoEditor"></PackagesManager>
     </div>
   </div>

@@ -307,12 +307,10 @@ window.esmsInitOptions = {
   shimMode: true,
   // Enable newer modules features
   polyfillEnable: ['css-modules', 'json-modules'],
-  // Custom CSP nonce
-  nonce: 'n0nce',
   // Don't retrigger load events on module scripts
   noLoadEventRetriggers: true,
   // Skip source analysis of certain URLs for full native passthrough
-  skip: null,
+  skip: /\/lib\/.*/,
   // Clean up blob URLs after execution
   revokeBlobURLs: true,
   // Secure mode to not support loading modules without integrity (integrity is always verified though)
@@ -320,7 +318,7 @@ window.esmsInitOptions = {
   // Permit overrides to import maps
   mapOverrides: true,
   // Module load error
-  resolve: (id) => id,
+  resolve: (id) => window.postMessageAsync({ action: 'resolve', id }),
   // Hook source fetch function
   fetch: (url) => formatFetchResult(url)
 }
