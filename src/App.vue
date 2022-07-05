@@ -2,7 +2,8 @@
 import '@unocss/reset/tailwind.css'
 import './styles/main.css'
 import 'uno.css'
-import { fs, File, VueSFCFile, CompileFile } from "@/integrations/vfs"
+import { fs, utoa } from "@/fs"
+import type { File, VueSFCFile, CompileFile } from "@/integrations/vfs"
 import { Sandbox, SandboxHandleData, SandboxExpose } from "@/components/iframe"
 import { MonacoEditor, MonacoEditorExpose } from "@/components/monaco"
 import { Packages, PackagesManager } from "@/components/packages"
@@ -94,7 +95,7 @@ async function resolveId(data: SandboxHandleData): Promise<string> {
   }
   const dep = packageMeta.value.dependencies[data.id!]
   if (dep) {
-    return dep.url.startsWith('/') ? window.location.href + dep.url : dep.url
+    return dep.url.startsWith('/') ? location.origin + location.pathname + dep.url : dep.url
   }
   return data.id!
 }
@@ -142,6 +143,15 @@ async function refreshMonacoEditor(file: File) {
     editor1.editor.monacoEditor.setValue(file.toString())
   }
 }
+
+function sharedPlayground() {
+  const names = fs.all().reduce((acc, file) => {
+      acc[file.filename] = file.toString()
+      return acc
+  }, {} as Record<string, string>)
+  location.hash = utoa(JSON.stringify(names))
+}
+
 </script>
 <template>
 <div class="wrap" flex flex-col h-full overflow-hidden>
@@ -167,7 +177,8 @@ async function refreshMonacoEditor(file: File) {
       <gg:browser w-6 h-6 m-2 :class="menuActive === 'Preview' ? 'text-white' : 'text-gray'" @click="clickMenu('Preview')"/>
       <ri:install-line w-6 h-6 m-2 :class="menuActive === 'Installed' ? 'text-white' : 'text-gray'" @click="clickMenu('Installed')"/>
       <mdi:package-variant-closed w-6 h-6 m-2 :class="menuActive === 'Packages' ? 'text-white' : 'text-gray'" @click="clickMenu('Packages')"/>
-      <ic:round-bolt @click="bootstrap"></ic:round-bolt>
+      <ic:round-bolt @click="bootstrap" />
+      <ic:sharp-share @click="sharedPlayground"/>
     </div>
     <div class="edit-wrap" flex-1>
       <MonacoEditor ref="monaco" />

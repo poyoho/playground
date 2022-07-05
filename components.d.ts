@@ -9,6 +9,7 @@ declare module 'vue' {
     'Ic:baselineCheck': typeof import('virtual:vite-icons/ic/baseline-check')['default']
     'Ic:roundBolt': typeof import('virtual:vite-icons/ic/round-bolt')['default']
     'Ic:roundClose': typeof import('virtual:vite-icons/ic/round-close')['default']
+    'Ic:sharpShare': typeof import('virtual:vite-icons/ic/sharp-share')['default']
     LogosJavascript: typeof import('virtual:vite-icons/logos/javascript')['default']
     LogosTypescriptIcon: typeof import('virtual:vite-icons/logos/typescript-icon')['default']
     LogosVue: typeof import('virtual:vite-icons/logos/vue')['default']

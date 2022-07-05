@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { fs } from "@/integrations/vfs"
+import { fs } from "@/fs"
 import {
   resolveRecommendPackage,
   resolvePackageData,

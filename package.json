@@ -43,6 +43,7 @@
     "vite-plugin-components": "^0.13.3",
     "vite-plugin-icons": "^0.6.5",
     "vite-plugin-inspect": "^0.5.1",
-    "vitest": "^0.16.0"
+    "vitest": "^0.16.0",
+    "fflate": "^0.7.3"
   }
 }

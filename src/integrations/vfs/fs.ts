@@ -14,9 +14,8 @@ type FileSystemEventMap<FileType> = {
 export class FileSystem extends EventListen<FileSystemEventMap<File>> {
   private files: Record<string, File> = {}
 
-  constructor() {
+  constructor(files: Record<string, string>) {
     super()
-    const files = import.meta.globEager("@/sample/vue/*", { as: "raw" })
     for(const file in files) {
       const name = file.split('/').pop()!
       const suffix = file.split('.').pop()!
@@ -72,5 +71,9 @@ export class FileSystem extends EventListen<FileSystemEventMap<File>> {
 
   dirs() {
     return Object.keys(this.files).map(file => this.files[file]).filter(item => !item.private)
+  }
+
+  all() {
+    return Object.keys(this.files).map(file => this.files[file])
   }
 }

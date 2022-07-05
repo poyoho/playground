@@ -48,7 +48,6 @@ declare global {
   const useCssModule: typeof import('vue')['useCssModule']
   const useCssVars: typeof import('vue')['useCssVars']
   const useSlots: typeof import('vue')['useSlots']
-  const useUserStore: typeof import('./store/vfs')['useUserStore']
   const watch: typeof import('vue')['watch']
   const watchEffect: typeof import('vue')['watchEffect']
   const watchPostEffect: typeof import('vue')['watchPostEffect']
@@ -105,7 +104,6 @@ declare module '@vue/runtime-core' {
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
     readonly useCssVars: UnwrapRef<typeof import('vue')['useCssVars']>
     readonly useSlots: UnwrapRef<typeof import('vue')['useSlots']>
-    readonly useUserStore: UnwrapRef<typeof import('./store/vfs')['useUserStore']>
     readonly watch: UnwrapRef<typeof import('vue')['watch']>
     readonly watchEffect: UnwrapRef<typeof import('vue')['watchEffect']>
     readonly watchPostEffect: UnwrapRef<typeof import('vue')['watchPostEffect']>
