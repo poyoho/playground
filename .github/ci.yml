@@ -37,5 +37,3 @@ jobs:
       - name: Install deps
         run: pnpm ci
 
-      - name: Check formatting
-        run: pnpm prettier --check .
