@@ -16,7 +16,6 @@
     "monaco-editor-textmate": "^3.0.0",
     "monaco-textmate": "^3.0.1",
     "onigasm": "^2.2.5",
-    "pinia": "^2.0.14",
     "vscode-html-languageservice": "^4.0.3",
     "vue": "^3.2.37"
   },

@@ -13,6 +13,7 @@ export type SandboxHandler =  Partial<{
   on_fetch_progress: (data: SandboxHandleData) => void
   on_error: (data: SandboxHandleData) => void
   on_load: (data: SandboxHandleData) => Promise<string>
+  on_resolve: (data: SandboxHandleData) => Promise<string>
   on_unhandled_rejection: (data: SandboxHandleData) => void
   on_console: (data: SandboxHandleData) => void
   on_console_group: (data: SandboxHandleData) => void
@@ -108,8 +109,12 @@ export class SandboxProxy {
       case 'console_group_end':
         return this.handlers.on_console_group_end && this.handlers.on_console_group_end(event.data)
       case 'load':
-        const data = this.handlers.on_load && await this.handlers.on_load(event.data)
-        this.iframe.contentWindow!.postMessage({ action, args: { data }, command_id }, '*')
+        const loadData = this.handlers.on_load && await this.handlers.on_load(event.data)
+        this.iframe.contentWindow!.postMessage({ action, args: { data: loadData }, command_id }, '*')
+        return
+      case 'resolve':
+        const resolveData = this.handlers.on_resolve && await this.handlers.on_resolve(event.data)
+        this.iframe.contentWindow!.postMessage({ action, args: { data: resolveData }, command_id }, '*')
         return
     }
   }

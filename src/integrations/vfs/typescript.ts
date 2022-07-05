@@ -3,7 +3,7 @@ import { BaseFile } from "./baseFile"
 
 export class TypescriptFile extends BaseFile {
   public content = ''
-  public suffix = ''
+  public suffix = 'ts'
   public compiled = {
     js: ''
   }
@@ -16,5 +16,9 @@ export class TypescriptFile extends BaseFile {
     const js = await getRunnableJS(this.filename)
     this.compiled.js = js
     console.log('[compileFile]', this.compiled);
+  }
+
+  toString() {
+    return this.content
   }
 }

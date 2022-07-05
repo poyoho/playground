@@ -2,8 +2,12 @@ export interface Package {
   name: string
   version: string
   types: string
-  entry: string
+  url: string
+  source: string
+  description: string
 }
+
+export type PackageDependencies = Record<string, Omit<Package, 'name'>>
 
 // package.json
 export interface PackageMetadata {
@@ -12,6 +16,8 @@ export interface PackageMetadata {
   types: string
   main: string
   module: string
+  unpkg: string
+  description: string
   dependencies: Record<string, string>
 }
 
@@ -64,12 +70,14 @@ export async function resolveRecommendPackage (keyword: string) {
   return (await response.json()).results
 }
 
-export async function resolvePackageData (pkgName: string): Promise<PackageData> {
+export async function resolvePackageData(pkgName: string): Promise<PackageData> {
   const response = await fetch(SKYPACK_PACKAGEDATA(pkgName))
   if (!response.ok) {
     throw "load package data error"
   }
-  return await response.json()
+  const res = await response.json()
+  console.log('[resolvePackageData]', res)
+  return res
 }
 
 export async function resolvePackageMetadata(name: string, version: string): Promise<PackageMetadata> {
@@ -78,15 +86,17 @@ export async function resolvePackageMetadata(name: string, version: string): Pro
   {
     throw new Error('Error Resolving Package Data')
   }
-  return await response.json()
+  const res = await response.json()
+  console.log('[resolvePackageMetadata]', res)
+  return res
 }
 
-export async function resolvePackage(name: string, version: string) {
+async function resolvePackageList(name: string, version: string): Promise<Package[]> {
   const packages: Package[] = []
   const metadata = await resolvePackageMetadata(name, version)
+  console.log('[resolvePackageList]', metadata)
 
   if (!(metadata instanceof Error)) {
-    const typesEntry = metadata.types
     const dependencies = Object.entries(metadata.dependencies || []).map(([name, version]) => ({ name, version }))
     const resolvedDeps = await Promise.allSettled(dependencies.map(({ name, version }) => resolvePackage(name, version)))
 
@@ -94,15 +104,32 @@ export async function resolvePackage(name: string, version: string) {
       {
         name: metadata.name,
         version: metadata.version,
-        entry: metadata.module || metadata.main,
-        types: typesEntry,
+        url: metadata.unpkg || metadata.module || metadata.main,
+        types: metadata.types,
+        description: metadata.description,
+        source: 'NETWORK'
       },
       ...resolvedDeps
-        .filter((result): result is PromiseFulfilledResult<Package[]> => result.status === 'fulfilled')
-        .map(result => result.value)
+        .filter((result) => result.status === 'fulfilled')
+        .map((result: any) => result.value)
         .flat()
     )
   }
 
   return packages.filter((p, i) => packages.findIndex(x => x.name === p.name) === i)
+}
+
+export async function resolvePackage(name: string, version: string): Promise<PackageDependencies> {
+  const packages = await resolvePackageList(name, version)
+  const deps: PackageDependencies = {}
+  packages.forEach(pkg => {
+    deps[pkg.name] = {
+      version: pkg.version,
+      types: pkg.types,
+      url: pkg.url,
+      description: pkg.description,
+      source: pkg.source,
+    }
+  })
+  return deps
 }

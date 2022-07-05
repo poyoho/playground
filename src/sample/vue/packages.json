@@ -1,8 +1,13 @@
-[
-  {
-    "name": "vue",
-    "source": "unpkg",
-    "description": "Vue Demi (half in French) is a developing utility allows you to write Universal Vue Libraries for Vue 2 & 3",
-    "url": "https://unpkg.com/vue-demi/lib/index.esm.js"
+{
+  "name": "vue",
+  "version": "0.0.1",
+  "dependencies": {
+    "vue": {
+      "source": "LOCAL",
+      "description": "vue library",
+      "url": "/lib/vue.runtime.esm-browser.prod.js",
+      "types": "/vue.d.ts",
+      "version": "3.2.37"
+    }
   }
-]
+}

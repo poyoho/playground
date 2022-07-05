@@ -1,25 +1,30 @@
 <script setup lang="ts">
+import '@unocss/reset/tailwind.css'
+import './styles/main.css'
+import 'uno.css'
+import { fs, File, VueSFCFile, CompileFile } from "@/integrations/vfs"
 import { Sandbox, SandboxHandleData, SandboxExpose } from "@/components/iframe"
 import { MonacoEditor, MonacoEditorExpose } from "@/components/monaco"
-import { TabsWrap, TabItem, Tabs } from "@/components/tabs/tabs"
-import { fs, File, VueSFCFile, CompileFile } from "@/integrations/vfs"
+import { Packages, PackagesManager } from "@/components/packages"
 
 const sandbox = ref<SandboxExpose>()
 const monaco = ref<MonacoEditorExpose>()
 const fileNames = ref(fs.dirs())
 const active = ref<File>(fileNames.value[0])
+const menuActive = ref('Preview')
+const fileRE = /(\/file:\/\/)(.*)?\.(html|vuehtml|ts|js|json)/
+const packageMeta = ref<Packages>(JSON.parse(fs.readFile('packages.json')!.content))
 
 fs.subscribe('update', () => {
+  packageMeta.value = JSON.parse(fs.readFile('packages.json')!.content) as Packages
   fileNames.value = fs.dirs()
 })
 
 fs.subscribe('delete', () => {
   fileNames.value = fs.dirs()
 })
-
 onMounted(async () => {
   const monacoManager = await monaco.value!.manager.promise
-  const sandboxInstance = sandbox.value!
   watch(active, async () => {
     const { filename, suffix, content } = active.value
     if (active.value.suffix === 'vue') {
@@ -38,13 +43,33 @@ onMounted(async () => {
       const model1 = monacoManager.createModelIfNotExist(suffix as any, filename, content)
       editor1.editor.setModel(model1)
     }
-    sandboxInstance.evalShim(bootstrap())
   }, { immediate: true })
+  // monaco editor change content
+  monacoManager.onDidChangeContent((e, model) => {
+    const [_, __, filename, suffix] = fileRE.exec(model.uri.path)!
+    const content = model.getValue()
+    // write to virtual file system
+    if (filename.endsWith('.vue')) {
+      const file = fs.readFile(filename) as VueSFCFile
+      if (suffix === 'vuehtml') {
+        file.template = content
+      } else {
+        file.script = content
+      }
+    } else {
+      const file = fs.readFile(filename + '.' + suffix)!
+      file.content = content
+      fs.writeFile(file)
+    }
+  })
+  bootstrap()
 })
 
 async function loadModules(data: SandboxHandleData): Promise<string> {
-  if (data.id?.startsWith('./')) {
-    const filename = data.id.replace('./', '')
+  const [id, _] = data.id!.split('?')
+  console.log('[resolveId]', id)
+  if (id.startsWith('./')) {
+    const filename = id.replace('./', '')
     const file = fs.readFile(filename)
     if (!file) {
       throw 'no found file'
@@ -59,50 +84,103 @@ async function loadModules(data: SandboxHandleData): Promise<string> {
       return compileFile.compiled.js
     }
   }
-  // module path (extract module)
-  console.log('[loadModules]', data.id)
-  const res = await fetch('/vue.runtime.esm-browser.prod.js')
-  return await res.text()
+  throw 'can not load the file: ' + data.id!
+}
+
+async function resolveId(data: SandboxHandleData): Promise<string> {
+  console.log('[resolveId]', data.id)
+  if (data.id?.startsWith('./')) {
+    return data.id! + '?t=' + Date.now()
+  }
+  const dep = packageMeta.value.dependencies[data.id!]
+  if (dep) {
+    return dep.url.startsWith('/') ? window.location.href + dep.url : dep.url
+  }
+  return data.id!
 }
 
 function close(file: string) {
   fs.removeFile(file)
 }
 
+function clickMenu(menu: string) {
+  menuActive.value = menu
+  switch(menu) {
+    case 'Installed':
+    case 'Packages':
+      const configFile = fs.readFile('packages.json')!
+      configFile.private = false
+      fileNames.value = fs.dirs()
+      active.value = configFile
+      break
+    case 'Preview':
+      break
+  }
+}
+
 function bootstrap() {
-  return fs.readFile('bootstrap.js')!.content
+  console.log('[bootstrap]')
+  const script = fs.readFile('bootstrap.js')!.content
+  sandbox.value?.evalShim(script)
+}
+
+async function refreshMonacoEditor(file: File) {
+  if (!monaco.value) {
+    return
+  }
+  const monacoManager = await monaco.value.manager.promise
+  const editors = monacoManager.getActiveEditor()
+  if (!editors) {
+    return
+  }
+  if (file.suffix === 'vue') {
+    const [editor1, editor2] = editors
+    editor1.editor.monacoEditor.setValue((file as VueSFCFile).template)
+    editor2.editor.monacoEditor.setValue((file as VueSFCFile).script)
+  } else {
+    const [editor1] = editors
+    editor1.editor.monacoEditor.setValue(file.toString())
+  }
 }
 </script>
 <template>
 <div class="wrap" flex flex-col h-full overflow-hidden>
-  <TabsWrap shadow-lg>
-    <Tabs flex justify-start items-center>
-      <TabItem
-        bg-dark-1 text-light cursor-pointer h-full p-2 px-3 text-3
-        border-r-1 border-solid border-dark-400
-        :class="active.filename === item.filename ? 'bg-dark-9' : ''"
-        v-for="item in fileNames" :name="item.filename" :key="item.filename"
-      >
-        <p flex items-center justify-center flex-gap-2 @click="active = item">
-          <logos-vue v-if="item.suffix === 'vue'" />
-          <vscode-icons:file-type-light-json v-if="item.suffix === 'json'" />
-          <logos-javascript v-if="item.suffix === 'js'" />
-          <logos-typescript-icon v-if="item.suffix === 'ts'" />
-          {{ item.filename }}
-          <ic:round-close v-if="active.filename === item.filename" @click="close(item.filename)"/>
-        </p>
-      </TabItem>
-    </Tabs>
-  </TabsWrap>
-  <div w-full h-full flex>
-    <div class="menu" w-10>
-
+  <ul flex justify-start items-center shadow-lg cursor-default>
+    <li
+      bg-dark-1 text-light  h-full p-2 px-3 text-3
+      border-r-1 border-solid border-dark-400
+      :class="active.filename === item.filename ? 'bg-dark-9' : ''"
+      v-for="item in fileNames" :name="item.filename" :key="item.filename"
+    >
+      <p flex items-center justify-center flex-gap-2 @click="active = item">
+        <logos-vue v-if="item.suffix === 'vue'" />
+        <vscode-icons:file-type-light-json v-if="item.suffix === 'json'" />
+        <logos-javascript v-if="item.suffix === 'js'" />
+        <logos-typescript-icon v-if="item.suffix === 'ts'" />
+        {{ item.filename }}
+        <ic:round-close v-if="active.filename === item.filename" @click="close(item.filename)" cursor-pointer />
+      </p>
+    </li>
+  </ul>
+  <div w-full h-full flex text-light>
+    <div class="menu" w-10 flex justify-start flex-col items-center flex-gap-2>
+      <gg:browser w-6 h-6 m-2 :class="menuActive === 'Preview' ? 'text-white' : 'text-gray'" @click="clickMenu('Preview')"/>
+      <ri:install-line w-6 h-6 m-2 :class="menuActive === 'Installed' ? 'text-white' : 'text-gray'" @click="clickMenu('Installed')"/>
+      <mdi:package-variant-closed w-6 h-6 m-2 :class="menuActive === 'Packages' ? 'text-white' : 'text-gray'" @click="clickMenu('Packages')"/>
+      <ic:round-bolt @click="bootstrap"></ic:round-bolt>
     </div>
-    <div class="edit-wrap" w="1/2">
+    <div class="edit-wrap" flex-1>
       <MonacoEditor ref="monaco" />
     </div>
     <div w="1/2" h-full>
-      <Sandbox ref="sandbox" :load-modules="loadModules"></Sandbox>
+      <Sandbox
+        v-show="menuActive === 'Preview'"
+        ref="sandbox"
+        :load-modules="loadModules"
+        :resolve-id="resolveId"
+      >
+      </Sandbox>
+      <PackagesManager v-if="['Installed', 'Packages'].includes(menuActive)" :active="menuActive" @update="refreshMonacoEditor"></PackagesManager>
     </div>
   </div>
 </div>

@@ -15,6 +15,14 @@ type PromiseValue<T> = T extends Promise<infer N> ? N : never
 
 export type MonacoManager = PromiseValue<ReturnType<typeof createMonacoManager>>
 
+export type MonacoEventMap = {
+  onDidChangeContent: (e: monaco.editor.IModelContentChangedEvent, model: monaco.editor.ITextModel) => void
+}
+
+type ArrayRecord<T> = {
+  [P in keyof T]: Array<T[P]>
+}
+
 export const SupportLanguage = {
   "vuehtml": "vuehtml",
   "html": "html",
@@ -126,6 +134,8 @@ export class MonacoEditor {
 
 export const createMonacoManager = createSinglePromise(async (wrap: HTMLElement, length: number) => {
   const editors: MonacoEditorItem[] = []
+  const eventMap = {} as ArrayRecord<MonacoEventMap>
+
   const [_, theme] = await Promise.all([
     loadWorkers(),
     createMonacoThemeManager(),
@@ -157,9 +167,10 @@ export const createMonacoManager = createSinglePromise(async (wrap: HTMLElement,
     filename: string,
     code?: string
   ) {
-    const model = findModel(filename)
+    let model = findModel(filename)
     if (!model) {
-      return createModel(extension, filename, code)
+      model = createModel(extension, filename, code)
+      model.onDidChangeContent((e) => emitChangeContent(e, model!))
     }
     return model
   }
@@ -185,11 +196,32 @@ export const createMonacoManager = createSinglePromise(async (wrap: HTMLElement,
     })
   }
 
+  function getActiveEditor() {
+    return editors.filter(state => state.status)
+  }
+
+  function emitChangeContent(e: monaco.editor.IModelContentChangedEvent, model: monaco.editor.ITextModel) {
+    const event = 'onDidChangeContent'
+    eventMap[event] && eventMap[event].forEach(fn => fn(e, model))
+  }
+
+  function onDidChangeContent(cb: MonacoEventMap['onDidChangeContent']) {
+    const event = 'onDidChangeContent'
+    console.log('[onDidChangeContent]', cb)
+    if (eventMap[event]) {
+      eventMap[event].push(cb)
+    } else {
+      eventMap[event] = [cb]
+    }
+  }
+
   return {
     monaco,
     theme,
     typescript: createMonacoTypescriptServiceManage(),
     active,
-    createModelIfNotExist
+    getActiveEditor,
+    createModelIfNotExist,
+    onDidChangeContent,
   }
 })
