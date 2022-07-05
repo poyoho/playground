@@ -14,19 +14,10 @@
     "strictNullChecks": true,
     "allowJs": true,
     "forceConsistentCasingInFileNames": true,
-    "types": [
-      "vitest",
-      "vite/client",
-      "vue/ref-macros",
-    ],
+    "types": ["vitest", "vite/client", "vue/ref-macros"],
     "paths": {
       "@/*": ["src/*"]
     }
   },
-  "exclude": [
-    "public",
-    "dist",
-    "node_modules",
-    "cypress"
-  ]
+  "exclude": ["public", "dist", "node_modules", "cypress"]
 }

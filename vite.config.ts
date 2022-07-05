@@ -10,44 +10,39 @@ import Unocss from 'unocss/vite'
 export default defineConfig({
   resolve: {
     alias: {
-      '@/': `${path.resolve('src')}/`,
-    },
+      '@/': `${path.resolve('src')}/`
+    }
   },
 
   plugins: [
     Vue({
       include: [/\.vue$/],
-      reactivityTransform: true,
+      reactivityTransform: true
     }),
     AutoImport({
-      imports: [
-        'vue',
-      ],
+      imports: ['vue'],
       dts: 'src/auto-imports.d.ts',
-      dirs: [
-        'src/composables',
-        'src/store',
-      ],
-      vueTemplate: true,
+      dirs: ['src/composables', 'src/store'],
+      vueTemplate: true
     }),
     Components({
       globalComponentsDeclaration: true,
       customComponentResolvers: [
         ViteIconsResolver({
-          componentPrefix: '',
-        }),
+          componentPrefix: ''
+        })
       ]
     }),
     Icons(),
     Unocss(),
-    Inspect(),
+    Inspect()
   ],
 
   test: {
     include: ['test/**/*.test.ts'],
     environment: 'jsdom',
     deps: {
-      inline: ['@vue'],
-    },
-  },
+      inline: ['@vue']
+    }
+  }
 })

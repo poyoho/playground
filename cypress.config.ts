@@ -5,6 +5,6 @@ export default defineConfig({
     baseUrl: 'http://localhost:3333',
     chromeWebSecurity: false,
     specPattern: 'cypress/e2e/**/*.spec.*',
-    supportFile: false,
-  },
+    supportFile: false
+  }
 })
